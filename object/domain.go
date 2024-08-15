@@ -17,10 +17,12 @@ package object
 import (
 	"context"
 	"fmt"
+
 	"github.com/casdoor/casdoor/orm"
 
-	"github.com/casdoor/casdoor/util"
 	"github.com/xorm-io/core"
+
+	"github.com/casdoor/casdoor/util"
 )
 
 type Domain struct {
@@ -230,7 +232,10 @@ func domainChangeTrigger(oldName string, newName string) error {
 
 	for _, role := range roles {
 		for j, u := range role.Domains {
-			owner, name := util.GetOwnerAndNameFromId(u)
+			owner, name, err := util.GetOwnerAndNameFromId(u)
+			if err != nil {
+				return err
+			}
 			if name == oldName {
 				role.Domains[j] = util.GetId(owner, newName)
 			}
@@ -250,7 +255,10 @@ func domainChangeTrigger(oldName string, newName string) error {
 	for _, permission := range permissions {
 		for j, u := range permission.Domains {
 			// u = organization/username
-			owner, name := util.GetOwnerAndNameFromId(u)
+			owner, name, err := util.GetOwnerAndNameFromId(u)
+			if err != nil {
+				return err
+			}
 			if name == oldName {
 				permission.Domains[j] = util.GetId(owner, newName)
 			}
@@ -299,20 +307,6 @@ func subDomainPermissions(domain *Domain) ([]*Permission, error) {
 	}
 
 	return result, nil
-}
-
-// GetAncestorDomains returns a list of domains that contain the given domainIds
-func GetAncestorDomains(ctx context.Context, domainIds ...string) ([]*Domain, error) {
-	owner, _ := util.GetOwnerAndNameFromIdNoCheck(domainIds[0])
-
-	allDomains, err := GetDomains(ctx, owner)
-	if err != nil {
-		return nil, err
-	}
-
-	allDomainsTree := makeAncestorDomainsTreeMap(allDomains)
-
-	return getAncestorEntities(allDomainsTree, domainIds...)
 }
 
 func makeAncestorDomainsTreeMap(domains []*Domain) map[string]*TreeNode[*Domain] {

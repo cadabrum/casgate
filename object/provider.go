@@ -17,16 +17,18 @@ package object
 import (
 	"context"
 	"fmt"
-	"github.com/casdoor/casdoor/orm"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/casdoor/casdoor/orm"
+
 	bCtx "github.com/beego/beego/context"
+	"github.com/xorm-io/core"
+
 	"github.com/casdoor/casdoor/i18n"
 	"github.com/casdoor/casdoor/idp"
 	"github.com/casdoor/casdoor/util"
-	"github.com/xorm-io/core"
 )
 
 const (
@@ -217,7 +219,10 @@ func getProvider(owner string, name string) (*Provider, error) {
 }
 
 func GetProvider(id string) (*Provider, error) {
-	owner, name := util.GetOwnerAndNameFromId(id)
+	owner, name, err := util.GetOwnerAndNameFromId(id)
+	if err != nil {
+		return nil, err
+	}
 	return getProvider(owner, name)
 }
 
@@ -232,7 +237,10 @@ func GetWechatMiniProgramProvider(application *Application) *Provider {
 }
 
 func UpdateProvider(id string, provider *Provider) (bool, error) {
-	owner, name := util.GetOwnerAndNameFromId(id)
+	owner, name, err := util.GetOwnerAndNameFromId(id)
+	if err != nil {
+		return false, err
+	}
 	if p, err := getProvider(owner, name); err != nil {
 		return false, err
 	} else if p == nil {
@@ -295,7 +303,10 @@ func (p *Provider) GetId() string {
 }
 
 func GetCaptchaProviderByOwnerName(applicationId, lang string) (*Provider, error) {
-	owner, name := util.GetOwnerAndNameFromId(applicationId)
+	owner, name, err := util.GetOwnerAndNameFromId(applicationId)
+	if err != nil {
+		return nil, err
+	}
 	provider := Provider{Owner: owner, Name: name, Category: "Captcha"}
 	existed, err := orm.AppOrmer.Engine.Get(&provider)
 	if err != nil {
